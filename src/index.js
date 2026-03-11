@@ -20,6 +20,22 @@ app.get("/", (req, res) => {
   res.json({
     app: "BeautySalonX API",
     status: "online",
+    message: "API funcionando",
+  });
+});
+
+app.get("/health", (req, res) => {
+  res.json({
+    ok: true,
+    service: "beautysalonx-api",
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+  });
+});
+
+app.get("/ping", (req, res) => {
+  res.json({
+    pong: true,
   });
 });
 
