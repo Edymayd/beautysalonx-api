@@ -642,7 +642,7 @@ app.get("/pay", (req, res) => {
   }
 
   document.getElementById("pix").innerHTML =
-  "<p>Escaneie o código QR:</p><img src='" + qr + "' width='250'/>";s
+  "<p>Escaneie o código QR:</p><img src='" + qr + "' width='250'/>";
 }
 
 
