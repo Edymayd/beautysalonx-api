@@ -587,98 +587,116 @@ app.get("/pay", (req, res) => {
         font-size:16px;
         cursor:pointer;
       }
-      input{
+      input, textarea, select{
         width:100%;
         padding:10px;
         margin:10px 0;
+        box-sizing:border-box;
+      }
+      img{
+        max-width:100%;
+        height:auto;
+      }
+      .muted{
+        color:#666;
+        font-size:14px;
       }
     </style>
   </head>
   <body>
-
     <div class="card">
       <h2>BeautySalonX Premium</h2>
 
-      <p>Plano mensal</p>
-      <h3>R$ 24,90</h3>
+      <p>Escolha seu plano</p>
+      <select id="plano">
+        <option value="mensal">Mensal - R$ 24,90</option>
+        <option value="semestral">Semestral</option>
+        <option value="anual">Anual</option>
+      </select>
 
-      <input id="email" placeholder="Digite seu email"/>
+      <input id="email" placeholder="Digite seu email" />
 
       <button onclick="gerarPix()">Gerar PIX</button>
 
-      <div id="pix"></div>
+      <div id="pix" style="margin-top:20px;"></div>
     </div>
 
     <script>
-async function gerarPix() {
-  const email = document.getElementById("email").value.trim().toLowerCase();
-  const pixDiv = document.getElementById("pix");
+      async function gerarPix() {
+        const email = document.getElementById("email").value.trim().toLowerCase();
+        const plano = document.getElementById("plano").value;
+        const pixDiv = document.getElementById("pix");
 
-  if (!email || !email.includes("@")) {
-    pixDiv.innerHTML = "<p style='color:red;'>Digite um email válido.</p>";
-    return;
-  }
+        if (!email || !email.includes("@")) {
+          pixDiv.innerHTML = "<p style='color:red;'>Digite um email válido.</p>";
+          return;
+        }
 
-  pixDiv.innerHTML = "<p>Gerando PIX...</p>";
+        pixDiv.innerHTML = "<p>Gerando PIX...</p>";
 
-  try {
-    const r = await fetch("/pix/create", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: email,
-        plano: "mensal"
-      })
-    });
+        try {
+          const r = await fetch("/pix/create", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: email,
+              plano: plano
+            })
+          });
 
-    const data = await r.json();
+          const data = await r.json();
 
-    const qr =
-      data.qrCodeBase64 ||
-      data.qr ||
-      data.qrCode ||
-      data.qr_code ||
-      (data.app_checkout && data.app_checkout.qr_code_base64) ||
-      null;
+          const qr =
+            data.qrCodeBase64 ||
+            data.qr ||
+            data.qrCode ||
+            data.qr_code ||
+            (data.app_checkout && data.app_checkout.qr_code_base64) ||
+            null;
 
-    const copia =
-      data.pixCopiaECola ||
-      data.pix_code ||
-      (data.app_checkout && data.app_checkout.pix_code) ||
-      "";
+          const copia =
+            data.pixCopiaECola ||
+            data.pix_code ||
+            (data.app_checkout && data.app_checkout.pix_code) ||
+            "";
 
-    if (!r.ok) {
-      pixDiv.innerHTML =
-        "<p style='color:red;'>Erro ao gerar PIX</p>" +
-        "<pre style='text-align:left;white-space:pre-wrap;'>" +
-        JSON.stringify(data, null, 2) +
-        "</pre>";
-      return;
-    }
+          if (!r.ok) {
+            pixDiv.innerHTML =
+              "<p style='color:red;'>Erro ao gerar PIX</p>" +
+              "<pre style='text-align:left;white-space:pre-wrap;'>" +
+              JSON.stringify(data, null, 2) +
+              "</pre>";
+            return;
+          }
 
-    if (!qr) {
-      pixDiv.innerHTML =
-        "<p style='color:red;'>QR não encontrado no retorno</p>" +
-        "<pre style='text-align:left;white-space:pre-wrap;'>" +
-        JSON.stringify(data, null, 2) +
-        "</pre>";
-      return;
-    }
+          if (!qr) {
+            pixDiv.innerHTML =
+              "<p style='color:red;'>QR não encontrado no retorno</p>" +
+              "<pre style='text-align:left;white-space:pre-wrap;'>" +
+              JSON.stringify(data, null, 2) +
+              "</pre>";
+            return;
+          }
 
-    pixDiv.innerHTML =
-      "<p>Escaneie o código QR:</p>" +
-      "<img src=\"" + qr + "\" width=\"250\" style=\"display:block;margin:10px auto;\" />" +
-      "<p style=\"margin-top:15px;\">PIX copia e cola:</p>" +
-      "<textarea readonly style=\"width:100%;height:90px;\">" + copia + "</textarea>";
-  } catch (err) {
-    pixDiv.innerHTML =
-      "<p style='color:red;'>Falha ao chamar o servidor</p>" +
-      "<pre style='text-align:left;white-space:pre-wrap;'>" +
-      String(err) +
-      "</pre>";
-  }
-}
-
+          pixDiv.innerHTML =
+            "<p>Escaneie o código QR:</p>" +
+            "<img src='" + qr + "' width='250' style='display:block;margin:10px auto;' />" +
+            "<p style='margin-top:15px;'>PIX copia e cola:</p>" +
+            "<textarea readonly>" + copia + "</textarea>" +
+            "<p class='muted'>Após o pagamento, volte ao app e atualize a assinatura.</p>";
+        } catch (err) {
+          pixDiv.innerHTML =
+            "<p style='color:red;'>Falha ao chamar o servidor</p>" +
+            "<pre style='text-align:left;white-space:pre-wrap;'>" +
+            String(err) +
+            "</pre>";
+        }
+      }
+    </script>
+  </body>
+  </html>
+  `);
+});
 
 app.listen(PORT, () => {
   ensureDataFile();
