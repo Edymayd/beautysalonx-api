@@ -634,7 +634,7 @@ app.get("/pay", (req, res) => {
     return;
   }
 
-  const qr = data.qr || data.qrCode || data.qr_code || null;
+  const qr = data.qrCodeBase64 || data.qr || data.qrCode || data.qr_code || null;
 
   if (!qr) {
     alert("O servidor não retornou o QR Code.");
@@ -642,7 +642,7 @@ app.get("/pay", (req, res) => {
   }
 
   document.getElementById("pix").innerHTML =
-    "<p>Escaneie o código QR:</p><img src='" + qr + "' width='250'/>";
+  "<p>Escaneie o código QR:</p><img src='" + qr + "' width='250'/>";s
 }
 
 
