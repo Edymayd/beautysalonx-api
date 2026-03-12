@@ -698,11 +698,6 @@ if (paymentId) {
             "</pre>";
         }
       }
-    </script>
-  </body>
-  </html>
-  `);
-});
 
 async function verificarPagamento(paymentId) {
 
@@ -719,7 +714,7 @@ async function verificarPagamento(paymentId) {
 
         clearInterval(interval);
 
-        pixDiv.innerHTML =
+        pixDiv.innerHTML +=
           "<h3 style='color:green'>Pagamento confirmado ✅</h3>" +
           "<p>Seu Premium já está ativo.</p>" +
           "<p>Volte ao aplicativo BeautySalonX.</p>";
@@ -733,6 +728,13 @@ async function verificarPagamento(paymentId) {
   }, 4000);
 
 }
+
+
+    </script>
+  </body>
+  </html>
+  `);
+});
 
 
 app.listen(PORT, () => {
