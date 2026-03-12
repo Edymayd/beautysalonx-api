@@ -609,10 +609,10 @@ app.get("/pay", (req, res) => {
 
       <p>Escolha seu plano</p>
       <select id="plano">
-        <option value="mensal">Mensal - R$ 24,90</option>
-        <option value="semestral">Semestral</option>
-        <option value="anual">Anual</option>
-      </select>
+  <option value="mensal">Mensal - R$ 24,90</option>
+  <option value="semestral">Semestral - R$ 149,00</option>
+  <option value="anual">Anual - R$ 298,00</option>
+</select>
 
       <input id="email" placeholder="Digite seu email" />
 
