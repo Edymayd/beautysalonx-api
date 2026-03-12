@@ -324,11 +324,26 @@ app.post("/pix/confirm", (req, res) => {
   // gera licença
   const license = generateLicense();
 
-  licenses[payment.email] = {
-    plano: payment.plano,
-    license,
-    created: new Date().toISOString(),
-  };
+  const now = new Date();
+const expires = new Date(now);
+
+if (payment.plano === "mensal") {
+  expires.setDate(expires.getDate() + 30);
+} else if (payment.plano === "semestral") {
+  expires.setDate(expires.getDate() + 180);
+} else if (payment.plano === "anual") {
+  expires.setDate(expires.getDate() + 365);
+} else {
+  expires.setDate(expires.getDate() + 30);
+}
+
+licenses[payment.email] = {
+  plano: payment.plano,
+  license,
+  created: now.toISOString(),
+  expires_at: expires.toISOString(),
+  status: "active",
+};
 
   res.json({
     ok: true,
