@@ -634,7 +634,13 @@ app.get("/pay", (req, res) => {
     return;
   }
 
-  const qr = data.qrCodeBase64 || data.qr || data.qrCode || data.qr_code || null;
+  const qr =
+  data.qrCodeBase64 ||
+  data.qr ||
+  data.qrCode ||
+  data.qr_code ||
+  data?.app_checkout?.qr_code_base64 ||
+  null;
 
   if (!qr) {
     alert("O servidor não retornou o QR Code.");
