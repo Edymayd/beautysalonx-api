@@ -611,28 +611,39 @@ app.get("/pay", (req, res) => {
 
     <script>
       async function gerarPix(){
-        const email = document.getElementById("email").value;
+  const email = document.getElementById("email").value.trim().toLowerCase();
 
-        const r = await fetch("/pix/create",{
-          method:"POST",
-          headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({
-            email,
-            plano:"mensal"
-          })
-        });
+  if (!email || !email.includes("@")) {
+    alert("Digite um email válido.");
+    return;
+  }
 
-        const data = await r.json();
+  const r = await fetch("/pix/create", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: email,
+      plano: "mensal"
+    })
+  });
 
-        document.getElementById("pix").innerHTML =
-  "<p>Escaneie o QR Code:</p><img src='"+(data.qr || data.qrCode)+"' width='250'/>";
-      }
-    </script>
+  const data = await r.json();
 
-  </body>
-  </html>
-  `);
-});
+  if (!r.ok) {
+    alert(data.error || "Erro ao gerar PIX.");
+    return;
+  }
+
+  const qr = data.qr || data.qrCode || data.qr_code || null;
+
+  if (!qr) {
+    alert("O servidor não retornou o QR Code.");
+    return;
+  }
+
+  document.getElementById("pix").innerHTML =
+    "<p>Escaneie o código QR:</p><img src='" + qr + "' width='250'/>";
+}
 
 
 app.listen(PORT, () => {
