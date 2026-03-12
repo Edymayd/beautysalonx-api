@@ -625,7 +625,7 @@ app.get("/pay", (req, res) => {
         const data = await r.json();
 
         document.getElementById("pix").innerHTML =
-          "<p>Escaneie o QR Code:</p><img src='"+data.qr+"' width='250'/>";
+  "<p>Escaneie o QR Code:</p><img src='"+(data.qr || data.qrCode)+"' width='250'/>";
       }
     </script>
 
