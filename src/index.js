@@ -610,45 +610,73 @@ app.get("/pay", (req, res) => {
     </div>
 
     <script>
-      async function gerarPix(){
+async function gerarPix() {
   const email = document.getElementById("email").value.trim().toLowerCase();
+  const pixDiv = document.getElementById("pix");
 
   if (!email || !email.includes("@")) {
-    alert("Digite um email válido.");
+    pixDiv.innerHTML = "<p style='color:red;'>Digite um email válido.</p>";
     return;
   }
 
-  const r = await fetch("/pix/create", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      email: email,
-      plano: "mensal"
-    })
-  });
+  pixDiv.innerHTML = "<p>Gerando PIX...</p>";
 
-  const data = await r.json();
+  try {
+    const r = await fetch("/pix/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: email,
+        plano: "mensal"
+      })
+    });
 
-  if (!r.ok) {
-    alert(data.error || "Erro ao gerar PIX.");
-    return;
+    const data = await r.json();
+
+    const qr =
+      data.qrCodeBase64 ||
+      data.qr ||
+      data.qrCode ||
+      data.qr_code ||
+      (data.app_checkout && data.app_checkout.qr_code_base64) ||
+      null;
+
+    const copia =
+      data.pixCopiaECola ||
+      data.pix_code ||
+      (data.app_checkout && data.app_checkout.pix_code) ||
+      "";
+
+    if (!r.ok) {
+      pixDiv.innerHTML =
+        "<p style='color:red;'>Erro ao gerar PIX</p>" +
+        "<pre style='text-align:left;white-space:pre-wrap;'>" +
+        JSON.stringify(data, null, 2) +
+        "</pre>";
+      return;
+    }
+
+    if (!qr) {
+      pixDiv.innerHTML =
+        "<p style='color:red;'>QR não encontrado no retorno</p>" +
+        "<pre style='text-align:left;white-space:pre-wrap;'>" +
+        JSON.stringify(data, null, 2) +
+        "</pre>";
+      return;
+    }
+
+    pixDiv.innerHTML =
+      "<p>Escaneie o código QR:</p>" +
+      "<img src=\"" + qr + "\" width=\"250\" style=\"display:block;margin:10px auto;\" />" +
+      "<p style=\"margin-top:15px;\">PIX copia e cola:</p>" +
+      "<textarea readonly style=\"width:100%;height:90px;\">" + copia + "</textarea>";
+  } catch (err) {
+    pixDiv.innerHTML =
+      "<p style='color:red;'>Falha ao chamar o servidor</p>" +
+      "<pre style='text-align:left;white-space:pre-wrap;'>" +
+      String(err) +
+      "</pre>";
   }
-
-  const qr =
-  data.qrCodeBase64 ||
-  data.qr ||
-  data.qrCode ||
-  data.qr_code ||
-  data?.app_checkout?.qr_code_base64 ||
-  null;
-
-  if (!qr) {
-    alert("O servidor não retornou o QR Code.");
-    return;
-  }
-
-  document.getElementById("pix").innerHTML =
-  "<p>Escaneie o código QR:</p><img src='" + qr + "' width='250'/>";
 }
 
 
