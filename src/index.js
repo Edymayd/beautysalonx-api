@@ -645,6 +645,12 @@ app.get("/pay", (req, res) => {
           });
 
           const data = await r.json();
+ 
+          const paymentId = data.payment_id || data.id;
+
+if (paymentId) {
+  verificarPagamento(paymentId);
+}
 
           const qr =
             data.qrCodeBase64 ||
@@ -697,6 +703,37 @@ app.get("/pay", (req, res) => {
   </html>
   `);
 });
+
+async function verificarPagamento(paymentId) {
+
+  const pixDiv = document.getElementById("pix");
+
+  const interval = setInterval(async () => {
+
+    try {
+
+      const r = await fetch("/pix/status/" + paymentId);
+      const data = await r.json();
+
+      if (data.status === "paid") {
+
+        clearInterval(interval);
+
+        pixDiv.innerHTML =
+          "<h3 style='color:green'>Pagamento confirmado ✅</h3>" +
+          "<p>Seu Premium já está ativo.</p>" +
+          "<p>Volte ao aplicativo BeautySalonX.</p>";
+
+      }
+
+    } catch (err) {
+      console.log(err);
+    }
+
+  }, 4000);
+
+}
+
 
 app.listen(PORT, () => {
   ensureDataFile();
