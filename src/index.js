@@ -201,25 +201,32 @@ app.get("/premium/:email", (req, res) => {
       });
     }
 
-    const plano = lic?.plano || latestPaid?.plano || "mensal";
-    const license = lic?.license || latestPaid?.license || null;
-    const activatedAt =
-      lic?.activated_at || latestPaid?.paid_at || latestPaid?.created_at || null;
-    const paymentId = lic?.payment_id || latestPaid?.id || null;
+    const plano = lic?.plano || latestPaid?.plano || null;
+    const license = lic?.license || null;
+    const status = lic?.status || "active";
+    const expires_at = lic?.expires_at || null;
+
+    if (expires_at && new Date(expires_at) < new Date()) {
+      return res.json({
+        premium: false,
+        expired: true,
+        plano,
+        expires_at,
+        status: "expired",
+      });
+    }
 
     return res.json({
       premium: true,
       plano,
-      plan_label: getPlanLabel(plano),
       license,
-      activated_at: activatedAt,
-      payment_id: paymentId,
-      source: lic ? "license" : "payment",
+      expires_at,
+      status,
     });
-  } catch (error) {
+  } catch (err) {
+    console.error("Erro em /premium/:email", err);
     return res.status(500).json({
-      error: "erro ao consultar premium",
-      details: error.message,
+      error: "erro ao verificar premium",
     });
   }
 });
