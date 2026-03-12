@@ -557,6 +557,84 @@ app.get("/license/:email", (req, res) => {
   }
 });
 
+app.get("/pay", (req, res) => {
+  res.send(`
+  <html>
+  <head>
+    <title>BeautySalonX Premium</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body{
+        font-family: Arial;
+        background:#f3f4f6;
+        padding:30px;
+        text-align:center;
+      }
+      .card{
+        background:white;
+        padding:25px;
+        border-radius:10px;
+        max-width:420px;
+        margin:auto;
+        box-shadow:0 10px 20px rgba(0,0,0,0.1);
+      }
+      button{
+        background:#2563EB;
+        color:white;
+        border:none;
+        padding:12px 20px;
+        border-radius:8px;
+        font-size:16px;
+        cursor:pointer;
+      }
+      input{
+        width:100%;
+        padding:10px;
+        margin:10px 0;
+      }
+    </style>
+  </head>
+  <body>
+
+    <div class="card">
+      <h2>BeautySalonX Premium</h2>
+
+      <p>Plano mensal</p>
+      <h3>R$ 24,90</h3>
+
+      <input id="email" placeholder="Digite seu email"/>
+
+      <button onclick="gerarPix()">Gerar PIX</button>
+
+      <div id="pix"></div>
+    </div>
+
+    <script>
+      async function gerarPix(){
+        const email = document.getElementById("email").value;
+
+        const r = await fetch("/pix/create",{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({
+            email,
+            plano:"mensal"
+          })
+        });
+
+        const data = await r.json();
+
+        document.getElementById("pix").innerHTML =
+          "<p>Escaneie o QR Code:</p><img src='"+data.qr+"' width='250'/>";
+      }
+    </script>
+
+  </body>
+  </html>
+  `);
+});
+
+
 app.listen(PORT, () => {
   ensureDataFile();
   console.log(`✅ Server running on port ${PORT}`);
