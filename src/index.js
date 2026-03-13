@@ -3,6 +3,13 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const QRCode = require("qrcode");
+const { MercadoPagoConfig, Payment } = require("mercadopago");
+
+const mpClient = new MercadoPagoConfig({
+  accessToken: process.env.MP_ACCESS_TOKEN,
+});
+
+const mpPayment = new Payment(mpClient);
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
@@ -98,12 +105,17 @@ function buildPixCopyPaste({ id, email, plano, valor }) {
 }
 
 async function buildPixPayload(payment) {
-  const pixCopiaECola = buildPixCopyPaste(payment);
-  const qrCodeBase64 = await QRCode.toDataURL(pixCopiaECola);
+  const qrCodeBase64 =
+    payment?.point_of_interaction?.transaction_data?.qr_code_base64 || null;
+
+  const pixCopiaECola =
+    payment?.point_of_interaction?.transaction_data?.qr_code || null;
 
   return {
     pixCopiaECola,
-    qrCodeBase64,
+    qrCodeBase64: qrCodeBase64
+      ? `data:image/png;base64,${qrCodeBase64}`
+      : null,
   };
 }
 
@@ -247,79 +259,47 @@ app.get("/premium/:email", (req, res) => {
 
 app.post("/pix/create", async (req, res) => {
   try {
-    const email = normalizeEmail(req.body.email);
-    const plano = String(req.body.plano || "mensal").toLowerCase();
-    const device_id = String(req.body.device_id || "");
 
-    if (!email) {
-      return res.status(400).json({
-        error: "email obrigatório",
-      });
-    }
+    const { email, plano, device_id } = req.body;
 
-    const valor = getPlanAmount(plano);
-    const id = generateId("pix");
-    const expiresAt = getExpiresAt(30);
+    const prices = {
+      mensal: 24.9,
+      semestral: 149,
+      anual: 298
+    };
 
-    const payment = {
-  id,
-  email,
-  plano,
-  valor,
-  device_id,   // ← adicione esta linha
-  status: "pending",
-  created_at: new Date().toISOString(),
-  expires_at: expiresAt,
-  paid_at: null,
-  license: null,
-  provider: "mock",
-  provider_payment_id: null,
-  webhook_received_at: null,
-};
+    const amount = prices[plano];
 
-    const db = readDb();
-    db.payments[id] = payment;
-    writeDb(db);
+    const payment = await mpPayment.create({
+      body: {
+        transaction_amount: amount,
+        description: "BeautySalonX Premium",
+        payment_method_id: "pix",
+        payer: {
+          email: email
+        }
+      }
+    });
 
-    const pix = await buildPixPayload(payment);
+    const qr = payment.point_of_interaction.transaction_data.qr_code;
+    const qrBase64 = payment.point_of_interaction.transaction_data.qr_code_base64;
 
     return res.json({
       ok: true,
       payment_id: payment.id,
-      id: payment.id,
-      email: payment.email,
-      plano: payment.plano,
-      plan_label: getPlanLabel(payment.plano),
-      valor: payment.valor,
       status: payment.status,
-      created_at: payment.created_at,
-      expires_at: payment.expires_at,
-      pixCopiaECola: pix.pixCopiaECola,
-      qrCodeBase64: pix.qrCodeBase64,
-      check_url: `${APP_URL}/pix/check/${payment.id}`,
-      status_url: `${APP_URL}/pix/status/${payment.id}`,
-      confirm_url: `${APP_URL}/pix/confirm/${payment.id}`,
-      premium_url: `${APP_URL}/premium/${encodeURIComponent(payment.email)}`,
-      app_checkout: {
-        payment_id: payment.id,
-        email: payment.email,
-        plano: payment.plano,
-        plan_label: getPlanLabel(payment.plano),
-        amount: payment.valor,
-        status: payment.status,
-        pix_code: pix.pixCopiaECola,
-        qr_code_base64: pix.qrCodeBase64,
-        expires_at: payment.expires_at,
-        check_url: `${APP_URL}/pix/check/${payment.id}`,
-        status_url: `${APP_URL}/pix/status/${payment.id}`,
-        premium_url: `${APP_URL}/premium/${encodeURIComponent(payment.email)}`,
-      },
+      qr_code: qr,
+      qr_code_base64: qrBase64
     });
-  } catch (error) {
+
+  } catch (err) {
+
+    console.error(err);
+
     return res.status(500).json({
-      error: "erro ao criar cobrança pix",
-      details: error.message,
+      error: "erro ao criar pix"
     });
+
   }
 });
 
@@ -375,8 +355,10 @@ licenses[payment.email] = {
 });
 
 
-app.get("/pix/status/:id", (req, res) => {
-  try {
+app.get("/pix/status/:id", async (req, res) => {
+res.set("Cache-Control", "no-store");
+res.set("Pragma", "no-cache");  
+try {
     const db = readDb();
     const payment = db.payments[req.params.id];
 
@@ -384,6 +366,42 @@ app.get("/pix/status/:id", (req, res) => {
       return res.status(404).json({
         error: "pagamento não encontrado",
       });
+    }
+
+    const mpResult = await mpPayment.get({ id: req.params.id });
+    const mpStatus = String(mpResult?.status || "").toLowerCase();
+
+    if (mpStatus === "approved" && payment.status !== "paid") {
+      payment.status = "paid";
+      payment.paid_at = new Date().toISOString();
+
+      const license = generateLicense();
+      const now = new Date();
+      const expires = new Date(now);
+
+      if (payment.plano === "mensal") {
+        expires.setDate(expires.getDate() + 30);
+      } else if (payment.plano === "semestral") {
+        expires.setDate(expires.getDate() + 180);
+      } else if (payment.plano === "anual") {
+        expires.setDate(expires.getDate() + 365);
+      } else {
+        expires.setDate(expires.getDate() + 30);
+      }
+
+      db.licenses[payment.email] = {
+        email: payment.email,
+        plano: payment.plano,
+        license,
+        created: now.toISOString(),
+        expires_at: expires.toISOString(),
+        status: "active",
+        device_id: payment.device_id || null,
+      };
+
+      payment.license = license;
+
+      writeDb(db);
     }
 
     return res.json({
@@ -396,13 +414,10 @@ app.get("/pix/status/:id", (req, res) => {
       valor: payment.valor,
       status: payment.status,
       created_at: payment.created_at,
-      expires_at: payment.expires_at || null,
-      paid_at: payment.paid_at,
-      license: payment.license,
-      provider: payment.provider || null,
-      provider_payment_id: payment.provider_payment_id || null,
-      webhook_received_at: payment.webhook_received_at || null,
-      premium_url: `${APP_URL}/premium/${encodeURIComponent(payment.email)}`,
+      expires_at: db.licenses[payment.email]?.expires_at || null,
+      paid_at: payment.paid_at || null,
+      license: payment.license || null,
+      premium_url: `${APP_URL}/premium/${encodeURIComponent(payment.email)}?device_id=${encodeURIComponent(payment.device_id || "")}`,
     });
   } catch (error) {
     return res.status(500).json({
@@ -651,13 +666,15 @@ app.get("/pay", (req, res) => {
         pixDiv.innerHTML = "<p>Gerando PIX...</p>";
 
         try {
-          const r = await fetch("/pix/create", {
+          const r = await fetch("http://localhost:3000/pix/create", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              email: email,
-              plano: plano
-            })
+            
+body: JSON.stringify({
+  email: email,
+  plano: plano,
+  device_id: new URLSearchParams(window.location.search).get("device_id") || "WEB-PAY"
+})
           });
 
           const data = await r.json();
@@ -668,19 +685,24 @@ if (paymentId) {
   verificarPagamento(paymentId);
 }
 
-          const qr =
-            data.qrCodeBase64 ||
-            data.qr ||
-            data.qrCode ||
-            data.qr_code ||
-            (data.app_checkout && data.app_checkout.qr_code_base64) ||
-            null;
+          const qrRaw =
+  data.qr_code_base64 ||
+  data.qrCodeBase64 ||
+  data.qr ||
+  data.qrCode ||
+  null;
 
-          const copia =
-            data.pixCopiaECola ||
-            data.pix_code ||
-            (data.app_checkout && data.app_checkout.pix_code) ||
-            "";
+const qr = qrRaw
+  ? (String(qrRaw).startsWith("data:image")
+      ? qrRaw
+      : ("data:image/png;base64," + qrRaw))
+  : null;
+
+const copia =
+  data.qr_code ||
+  data.pixCopiaECola ||
+  data.pix_code ||
+  "";
 
           if (!r.ok) {
             pixDiv.innerHTML =
@@ -705,7 +727,7 @@ if (paymentId) {
             "<img src='" + qr + "' width='250' style='display:block;margin:10px auto;' />" +
             "<p style='margin-top:15px;'>PIX copia e cola:</p>" +
             "<textarea readonly>" + copia + "</textarea>" +
-            "<p class='muted'>Após o pagamento, volte ao app e atualize a assinatura.</p>";
+            "<p class='muted'>Após pagar, aguarde alguns segundos nesta tela para confirmação automática.</p>";
         } catch (err) {
           pixDiv.innerHTML =
             "<p style='color:red;'>Falha ao chamar o servidor</p>" +
@@ -723,7 +745,9 @@ async function verificarPagamento(paymentId) {
 
     try {
 
-      const r = await fetch("/pix/status/" + paymentId);
+      const r = await fetch("/pix/status/" + paymentId + "?t=" + Date.now(), {
+  cache: "no-store"
+});
       const data = await r.json();
 
       if (data.status === "paid") {
