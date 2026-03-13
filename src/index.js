@@ -666,7 +666,7 @@ app.get("/pay", (req, res) => {
         pixDiv.innerHTML = "<p>Gerando PIX...</p>";
 
         try {
-          const r = await fetch("http://localhost:3000/pix/create", {
+          const r = await fetch("/pix/create", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             
