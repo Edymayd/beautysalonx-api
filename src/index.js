@@ -303,7 +303,6 @@ app.get("/premium/:email", async (req, res) => {
 
 app.post("/pix/create", async (req, res) => {
   try {
-
     const { email, plano, device_id } = req.body;
 
     const prices = {
@@ -313,6 +312,14 @@ app.post("/pix/create", async (req, res) => {
     };
 
     const amount = prices[plano];
+
+    if (!email) {
+      return res.status(400).json({ error: "email obrigatório" });
+    }
+
+    if (!amount) {
+      return res.status(400).json({ error: "plano inválido" });
+    }
 
     const payment = await mpPayment.create({
       body: {
@@ -325,25 +332,43 @@ app.post("/pix/create", async (req, res) => {
       }
     });
 
-    const qr = payment.point_of_interaction.transaction_data.qr_code;
-    const qrBase64 = payment.point_of_interaction.transaction_data.qr_code_base64;
+    const qr = payment.point_of_interaction?.transaction_data?.qr_code || null;
+    const qrBase64 = payment.point_of_interaction?.transaction_data?.qr_code_base64 || null;
+
+    const db = readDb();
+
+    db.payments[String(payment.id)] = {
+      id: String(payment.id),
+      email: normalizeEmail(email),
+      plano,
+      valor: amount,
+      device_id: device_id || null,
+      status: String(payment.status || "pending").toLowerCase(),
+      provider: "mercadopago",
+      provider_payment_id: String(payment.id),
+      qr_code: qr,
+      qr_code_base64: qrBase64,
+      created_at: new Date().toISOString(),
+      paid_at: null,
+      license: null
+    };
+
+    writeDb(db);
 
     return res.json({
       ok: true,
-      payment_id: payment.id,
+      payment_id: String(payment.id),
       status: payment.status,
       qr_code: qr,
       qr_code_base64: qrBase64
     });
 
   } catch (err) {
-
     console.error(err);
 
     return res.status(500).json({
       error: "erro ao criar pix"
     });
-
   }
 });
 
