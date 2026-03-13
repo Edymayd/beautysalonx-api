@@ -614,7 +614,7 @@ app.get("/pay", (req, res) => {
   <option value="anual">Anual - R$ 298,00</option>
 </select>
 
-      <input id="email" placeholder="Digite seu email" />
+      <input id="email" value="${req.query.email || ""}" placeholder="Digite seu email" />
 
       <button onclick="gerarPix()">Gerar PIX</button>
 
