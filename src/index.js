@@ -767,11 +767,12 @@ const copia =
           }
 
           pixDiv.innerHTML =
-            "<p>Escaneie o código QR:</p>" +
-            "<img src='" + qr + "' width='250' style='display:block;margin:10px auto;' />" +
-            "<p style='margin-top:15px;'>PIX copia e cola:</p>" +
-            "<textarea readonly>" + copia + "</textarea>" +
-            "<p class='muted'>Após pagar, aguarde alguns segundos nesta tela para confirmação automática.</p>";
+  "<p>Escaneie o código QR:</p>" +
+  "<img src='" + qr + "' width='250' style='display:block;margin:10px auto;' />" +
+  "<p style='margin-top:10px;font-size:12px;color:#666;'>ID do pagamento: " + paymentId + "</p>" +
+  "<p style='margin-top:15px;'>PIX copia e cola:</p>" +
+  "<textarea readonly>" + copia + "</textarea>" +
+  "<p class='muted'>Após pagar, aguarde alguns segundos nesta tela para confirmação automática.</p>";
         } catch (err) {
           pixDiv.innerHTML =
             "<p style='color:red;'>Falha ao chamar o servidor</p>" +
