@@ -190,6 +190,7 @@ app.get("/ping", (req, res) => {
 app.get("/premium/:email", (req, res) => {
   try {
     const email = normalizeEmail(req.params.email);
+    const device_id = String(req.query.device_id || "");
     const db = readDb();
 
     const lic = db.licenses[email];
@@ -198,6 +199,18 @@ app.get("/premium/:email", (req, res) => {
     if (!lic && !latestPaid) {
       return res.json({
         premium: false,
+      });
+    }
+
+    const paymentDeviceId = String(latestPaid?.device_id || "");
+    const licenseDeviceId = String(lic?.device_id || "");
+
+    const expectedDeviceId = licenseDeviceId || paymentDeviceId || "";
+
+    if (expectedDeviceId && device_id && expectedDeviceId !== device_id) {
+      return res.json({
+        premium: false,
+        reason: "device_mismatch",
       });
     }
 
@@ -231,10 +244,12 @@ app.get("/premium/:email", (req, res) => {
   }
 });
 
+
 app.post("/pix/create", async (req, res) => {
   try {
     const email = normalizeEmail(req.body.email);
     const plano = String(req.body.plano || "mensal").toLowerCase();
+    const device_id = String(req.body.device_id || "");
 
     if (!email) {
       return res.status(400).json({
@@ -247,19 +262,20 @@ app.post("/pix/create", async (req, res) => {
     const expiresAt = getExpiresAt(30);
 
     const payment = {
-      id,
-      email,
-      plano,
-      valor,
-      status: "pending",
-      created_at: new Date().toISOString(),
-      expires_at: expiresAt,
-      paid_at: null,
-      license: null,
-      provider: "mock",
-      provider_payment_id: null,
-      webhook_received_at: null,
-    };
+  id,
+  email,
+  plano,
+  valor,
+  device_id,   // ← adicione esta linha
+  status: "pending",
+  created_at: new Date().toISOString(),
+  expires_at: expiresAt,
+  paid_at: null,
+  license: null,
+  provider: "mock",
+  provider_payment_id: null,
+  webhook_received_at: null,
+};
 
     const db = readDb();
     db.payments[id] = payment;
