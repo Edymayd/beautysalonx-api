@@ -321,7 +321,7 @@ app.post("/pix/create", async (req, res) => {
       return res.status(400).json({ error: "plano inválido" });
     }
 
-    const payment = await mpPayment.create({
+    const mpRes = await mpPayment.create({
       body: {
         transaction_amount: amount,
         description: "BeautySalonX Premium",
@@ -332,39 +332,37 @@ app.post("/pix/create", async (req, res) => {
       }
     });
 
-    const qr = payment.point_of_interaction?.transaction_data?.qr_code || null;
-    const qrBase64 = payment.point_of_interaction?.transaction_data?.qr_code_base64 || null;
+    const qr = mpRes?.point_of_interaction?.transaction_data?.qr_code || null;
+    const qrBase64 = mpRes?.point_of_interaction?.transaction_data?.qr_code_base64 || null;
 
     const db = readDb();
 
-    db.payments[String(payment.id)] = {
-      id: String(payment.id),
+    db.payments[String(mpRes.id)] = {
+      id: String(mpRes.id),
       email: normalizeEmail(email),
       plano,
       valor: amount,
-      device_id: device_id || null,
-      status: String(payment.status || "pending").toLowerCase(),
-      provider: "mercadopago",
-      provider_payment_id: String(payment.id),
-      qr_code: qr,
-      qr_code_base64: qrBase64,
+      status: String(mpRes.status || "pending").toLowerCase(),
       created_at: new Date().toISOString(),
       paid_at: null,
-      license: null
+      license: null,
+      provider: "mercadopago",
+      provider_payment_id: String(mpRes.id),
+      device_id: device_id || null,
+      webhook_received_at: null
     };
 
     writeDb(db);
 
     return res.json({
       ok: true,
-      payment_id: String(payment.id),
-      status: payment.status,
+      payment_id: String(mpRes.id),
+      status: String(mpRes.status || "pending").toLowerCase(),
       qr_code: qr,
       qr_code_base64: qrBase64
     });
-
   } catch (err) {
-    console.error(err);
+    console.error("Erro ao criar pix:", err?.message || err);
 
     return res.status(500).json({
       error: "erro ao criar pix"
