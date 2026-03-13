@@ -199,11 +199,56 @@ app.get("/ping", (req, res) => {
   });
 });
 
-app.get("/premium/:email", (req, res) => {
+app.get("/premium/:email", async (req, res) => {
   try {
     const email = normalizeEmail(req.params.email);
     const device_id = String(req.query.device_id || "");
     const db = readDb();
+
+    const emailPayments = Object.values(db.payments || {})
+      .filter((p) => normalizeEmail(p.email) === email)
+      .sort((a, b) => {
+        const aTime = new Date(a.created_at || 0).getTime();
+        const bTime = new Date(b.created_at || 0).getTime();
+        return bTime - aTime;
+      });
+
+    for (const p of emailPayments) {
+      if (String(p.status || "").toLowerCase() === "paid") continue;
+
+      const expectedDeviceId = String(p.device_id || "");
+      if (device_id && expectedDeviceId && device_id !== expectedDeviceId) {
+        continue;
+      }
+
+      try {
+        const mpPaymentId = String(p.provider_payment_id || p.id || "");
+        if (!mpPaymentId) continue;
+
+        const mpInfo = await mpPayment.get({ id: mpPaymentId });
+        const mpStatus = String(mpInfo?.status || "").toLowerCase();
+
+        if (mpStatus === "approved") {
+          const result = activatePayment(db, p, {
+            provider: "mercadopago",
+            provider_payment_id: mpPaymentId,
+            webhook_received_at: new Date().toISOString(),
+          });
+
+          db.licenses[email] = {
+            ...(db.licenses[email] || {}),
+            ...(result.licenseRecord || {}),
+            status: "active",
+            device_id: p.device_id || null,
+          };
+
+          writeDb(db);
+          break;
+        }
+      } catch (e) {
+        console.log("Erro ao conferir pagamento no Mercado Pago:", e?.message || e);
+      }
+    }
 
     const lic = db.licenses[email];
     const latestPaid = getLatestPaidPaymentByEmail(db, email);
@@ -216,7 +261,6 @@ app.get("/premium/:email", (req, res) => {
 
     const paymentDeviceId = String(latestPaid?.device_id || "");
     const licenseDeviceId = String(lic?.device_id || "");
-
     const expectedDeviceId = licenseDeviceId || paymentDeviceId || "";
 
     if (expectedDeviceId && device_id && expectedDeviceId !== device_id) {
@@ -227,7 +271,7 @@ app.get("/premium/:email", (req, res) => {
     }
 
     const plano = lic?.plano || latestPaid?.plano || null;
-    const license = lic?.license || null;
+    const license = lic?.license || latestPaid?.license || null;
     const status = lic?.status || "active";
     const expires_at = lic?.expires_at || null;
 
