@@ -184,6 +184,10 @@ app.get("/", (req, res) => {
   });
 });
 
+app.get("/warmup", (req, res) => {
+  res.json({ ok: true });
+});
+
 app.get("/health", (req, res) => {
   res.json({
     ok: true,
