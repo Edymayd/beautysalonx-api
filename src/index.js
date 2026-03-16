@@ -659,6 +659,24 @@ app.get("/license/:email", (req, res) => {
   }
 });
 
+app.get("/delete-account", (req, res) => {
+  res.send(`
+    <html>
+      <head>
+        <title>Excluir conta - BeautySalonX</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </head>
+      <body style="font-family: Arial; padding: 20px;">
+        <h2>Excluir conta - BeautySalonX</h2>
+        <p>Para solicitar a exclusão dos seus dados, envie um e-mail para:</p>
+        <p><b>seuemail@seudominio.com</b></p>
+        <p>Informe o e-mail utilizado no app.</p>
+      </body>
+    </html>
+  `);
+});
+
+
 app.get("/pay", (req, res) => {
   res.send(`
   <html>
