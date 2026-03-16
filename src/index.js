@@ -669,7 +669,7 @@ app.get("/delete-account", (req, res) => {
       <body style="font-family: Arial; padding: 20px;">
         <h2>Excluir conta - BeautySalonX</h2>
         <p>Para solicitar a exclusão dos seus dados, envie um e-mail para:</p>
-        <p><b>seuemail@seudominio.com</b></p>
+        <p><b>bsalonx@gmail.com</b></p>
         <p>Informe o e-mail utilizado no app.</p>
       </body>
     </html>
