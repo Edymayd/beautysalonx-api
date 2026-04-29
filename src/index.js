@@ -355,6 +355,30 @@ app.post("/license/switch-device", (req, res) => {
   }
 });
 
+
+app.get("/delete-account", (req, res) => {
+  res.send(`
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>Excluir conta</title>
+      </head>
+      <body style="font-family: Arial; padding: 24px;">
+        <h1>Exclusão de conta</h1>
+        <p>Para solicitar a exclusão da sua conta e dos seus dados do BeautySalonX, envie um e-mail para:</p>
+        <p><b>SEUEMAILAQUI@email.com</b></p>
+        <p>Informe o e-mail usado no aplicativo e solicite a exclusão da conta.</p>
+        <p>A solicitação será processada em até 48 horas.</p>
+      </body>
+    </html>
+  `);
+});
+
+app.get("/excluir-conta", (req, res) => {
+  res.redirect("/delete-account");
+});
+
+
 app.listen(PORT, () => {
   ensureDataFile();
   console.log(`✅ License server running on port ${PORT}`);
