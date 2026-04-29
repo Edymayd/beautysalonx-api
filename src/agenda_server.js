@@ -275,6 +275,7 @@ app.post("/agenda/professionals", (req, res) => {
   res.json({ ok: true, item: prof });
 });
 
+<<<<<<< HEAD
 
 app.get("/delete-account", (req, res) => {
   res.send(`
@@ -300,6 +301,8 @@ app.get("/delete-account", (req, res) => {
 });
 
 
+=======
+>>>>>>> 989989e2b2218bc7339172a230b7b6c7a5484259
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Agenda server online em http://0.0.0.0:${PORT}`);
 });
