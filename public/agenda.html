@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BeautySalonX2 - Agenda Web</title>
+  <style>
+    body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f5f6f8;
+  color: #1e293b;
+}
+
+    .topbar {
+      padding: 16px;
+      background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .topbar h1 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .topbar input,
+    .topbar button {
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid #333a46;
+      background: #1d222c;
+      color: #fff;
+      font-size: 14px;
+    }
+
+    .topbar button {
+      cursor: pointer;
+    }
+
+    .wrap {
+  padding: 16px;
+  overflow-x: auto;
+}
+
+    .status {
+      margin-bottom: 12px;
+      color: #b8c0cc;
+      font-size: 14px;
+    }
+
+    .card {
+      background: #ffffff;
+  border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #262b35;
+      text-align: left;
+      font-size: 14px;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f1f5f9;
+  color: #334155;
+      position: sticky;
+      top: 0;
+    }
+
+    tr:hover td {
+      background: #1a1f28;
+    }
+
+    .muted {
+      color: #9aa4b2;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      background: #263041;
+      color: #dbe7ff;
+    }
+
+    .empty {
+      padding: 20px;
+      color: #a9b3c2;
+    }
+
+    .erro {
+      color: #ff8e8e;
+      white-space: pre-wrap;
+#table {
+  table-layout: fixed;
+  width: 100%;
+  min-width: 100%;
+}
+
+#table th:first-child,
+#table td:first-child {
+  width: 80px;
+  min-width: 80px;
+  max-width: 80px;
+}
+
+#table th:not(:first-child),
+#table td:not(:first-child) {
+  min-width: 180px;
+  overflow: hidden;
+}
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <h1>Agenda Web</h1>
+    <input type="date" id="dateInput" />
+    <button id="btnLoad">Carregar</button>
+    <button id="btnToggleForm">Novo agendamento</button>
+  </div>
+
+  <div class="wrap">
+    <div id="status" class="status">Carregando...</div>
+
+    <div id="formCard" class="card" style="display:none; margin-bottom:16px; padding:16px;">
+      <div style="font-weight:700; margin-bottom:12px;">Novo agendamento</div>
+
+      <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:10px;">
+        <div>
+          <div style="font-size:12px; margin-bottom:4px;">Data</div>
+          <input id="fDate" type="date" style="width:100%; padding:10px; border-radius:8px; border:1px solid #d1d5db;" />
+        </div>
+
+        <div>
+          <div style="font-size:12px; margin-bottom:4px;">Hora</div>
+          <input id="fStart" type="time" style="width:100%; padding:10px; border-radius:8px; border:1px solid #d1d5db;" />
+        </div>
+
+        <div>
+          <div style="font-size:12px; margin-bottom:4px;">Cliente</div>
+          <input id="fClientName" type="text" placeholder="Nome do cliente" style="width:100%; padding:10px; border-radius:8px; border:1px solid #d1d5db;" />
+        </div>
+
+        <div>
+          <div style="font-size:12px; margin-bottom:4px;">Serviço</div>
+          <input id="fServiceName" type="text" placeholder="Nome do serviço" style="width:100%; padding:10px; border-radius:8px; border:1px solid #d1d5db;" />
+        </div>
+
+        <div>
+          <div style="font-size:12px; margin-bottom:4px;">Valor</div>
+          <input id="fPrice" type="number" step="0.01" placeholder="0.00" style="width:100%; padding:10px; border-radius:8px; border:1px solid #d1d5db;" />
+        </div>
+
+        <div>
+          <div style="font-size:12px; margin-bottom:4px;">Duração (min)</div>
+          <input id="fDuration" type="number" step="1" value="15" style="width:100%; padding:10px; border-radius:8px; border:1px solid #d1d5db;" />
+        </div>
+
+        <div>
+          <div style="font-size:12px; margin-bottom:4px;">Pausa (min)</div>
+          <input id="fPause" type="number" step="1" value="0" style="width:100%; padding:10px; border-radius:8px; border:1px solid #d1d5db;" />
+        </div>
+
+        <div>
+          <div style="font-size:12px; margin-bottom:4px;">Profissional</div>
+          <input id="fProfessionalName" type="text" placeholder="Ex.: Edson" style="width:100%; padding:10px; border-radius:8px; border:1px solid #d1d5db;" />
+        </div>
+      </div>
+
+      <div style="margin-top:10px;">
+        <div style="font-size:12px; margin-bottom:4px;">Observações</div>
+        <input id="fNotes" type="text" placeholder="Opcional" style="width:100%; padding:10px; border-radius:8px; border:1px solid #d1d5db;" />
+      </div>
+
+      <div style="display:flex; gap:8px; margin-top:14px;">
+        <button id="btnSave" style="padding:10px 14px; border-radius:10px; border:1px solid #2563eb; background:#2563eb; color:#fff; cursor:pointer;">
+          Salvar
+        </button>
+        <button id="btnCancelForm" style="padding:10px 14px; border-radius:10px; border:1px solid #d1d5db; background:#fff; color:#334155; cursor:pointer;">
+          Cancelar
+        </button>
+      </div>
+
+      <div id="formMsg" style="margin-top:10px; font-size:12px; color:#475569;"></div>
+    </div>
+
+    <div class="card">
+      <table id="table">
+        <thead>
+          <tr>
+            <th style="width: 90px;">Hora</th>
+            <th>Cliente</th>
+            <th>Serviço</th>
+            <th>Profissional</th>
+            <th style="width: 120px;">Valor</th>
+            <th style="width: 130px;">Status</th>
+          </tr>
+        </thead>
+        <tbody id="tbody">
+          <tr><td colspan="6" class="empty">Carregando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const SERVER_BASE = window.location.origin;
+    const dateInput = document.getElementById("dateInput");
+    const btnLoad = document.getElementById("btnLoad");
+    const btnToggleForm = document.getElementById("btnToggleForm");
+    const btnCancelForm = document.getElementById("btnCancelForm");
+    const btnSave = document.getElementById("btnSave");
+    const tbody = document.getElementById("tbody");
+    const statusEl = document.getElementById("status");
+    const formCard = document.getElementById("formCard");
+    const formMsg = document.getElementById("formMsg");
+
+    const fDate = document.getElementById("fDate");
+    const fStart = document.getElementById("fStart");
+    const fClientName = document.getElementById("fClientName");
+    const fServiceName = document.getElementById("fServiceName");
+    const fPrice = document.getElementById("fPrice");
+    const fDuration = document.getElementById("fDuration");
+    const fPause = document.getElementById("fPause");
+    const fProfessionalName = document.getElementById("fProfessionalName");
+    const fNotes = document.getElementById("fNotes");
+
+    function todayISO() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, "0");
+      const d = String(now.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    function money(v) {
+      const n = Number(v || 0);
+      return n.toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL"
+      });
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function normalizeList(data) {
+      if (Array.isArray(data)) return data;
+      if (Array.isArray(data?.items)) return data.items;
+      if (Array.isArray(data?.appointments)) return data.appointments;
+      if (Array.isArray(data?.data)) return data.data;
+      return [];
+    }
+
+    function toggleForm(show) {
+  formCard.style.display = show ? "block" : "none";
+  formMsg.textContent = "";
+
+  if (!show) {
+    delete formCard.dataset.editId;
+    return;
+  }
+
+  if (!formCard.dataset.editId) {
+    fDate.value = dateInput.value || todayISO();
+    fStart.value = "08:00";
+    fClientName.value = "";
+    fServiceName.value = "";
+    fPrice.value = "";
+    fDuration.value = 15;
+    fPause.value = 0;
+    fProfessionalName.value = "";
+    fNotes.value = "";
+  }
+}
+
+function openFormForSlot(date, time, professionalName) {
+  toggleForm(true);
+  fDate.value = date || dateInput.value || todayISO();
+  fStart.value = time || "08:00";
+  fProfessionalName.value = professionalName === "Sem profissional" ? "" : (professionalName || "");
+  fClientName.focus();
+}
+
+function openFormForEdit(item) {
+  toggleForm(true);
+
+  fDate.value = item.date || dateInput.value || todayISO();
+  fStart.value = item.start || "08:00";
+  fClientName.value = item.client_name || "";
+  fServiceName.value = item.service_name || "";
+  fPrice.value = Number(item.price || 0);
+  fDuration.value = Number(item.duration_min || 15);
+  fPause.value = Number(item.pause_min || 0);
+  fProfessionalName.value = item.professional_name === "Sem profissional" ? "" : (item.professional_name || "");
+  fNotes.value = item.notes || "";
+
+  formCard.dataset.editId = item.id || "";
+  formMsg.textContent = "Modo edição";
+}
+
+    function renderRows(list) {
+  const thead = document.querySelector("#table thead");
+
+  if (!list.length) {
+    thead.innerHTML = `
+      <tr>
+        <th style="width:80px;">Hora</th>
+        <th>Agenda</th>
+      </tr>
+    `;
+    tbody.innerHTML = `<tr><td colspan="2" class="empty">Nenhum agendamento neste dia.</td></tr>`;
+    return;
+  }
+
+  const profs = [...new Set(list.map(i => (i.professional_name || "").trim() || "Sem profissional"))];
+  const times = [...new Set(list.map(i => i.start || "--:--"))].sort((a, b) => a.localeCompare(b));
+
+  const map = {};
+  list.forEach(item => {
+    const h = item.start || "--:--";
+    const p = (item.professional_name || "").trim() || "Sem profissional";
+    if (!map[h]) map[h] = {};
+    map[h][p] = item;
+  });
+
+  thead.innerHTML = `
+    <tr>
+      <th style="width:80px;">Hora</th>
+      ${profs.map(p => `<th>${escapeHtml(p)}</th>`).join("")}
+    </tr>
+  `;
+
+  const currentDate = dateInput.value || todayISO();
+
+  tbody.innerHTML = times.map(h => `
+    <tr>
+      <td style="white-space:nowrap; font-weight:600;">${escapeHtml(h)}</td>
+      ${profs.map(p => {
+        const item = map[h]?.[p];
+
+        if (!item) {
+          return `
+            <td style="padding:4px; vertical-align:top;">
+              <div
+                data-slot="new"
+                data-date="${escapeHtml(currentDate)}"
+                data-time="${escapeHtml(h)}"
+                data-professional="${escapeHtml(p)}"
+                style="
+                  background:#f8fafc;
+                  border:1px dashed #cbd5e1;
+                  border-radius:8px;
+                  padding:8px;
+                  min-height:56px;
+                  box-sizing:border-box;
+                  cursor:pointer;
+                  color:#94a3b8;
+                  font-size:11px;
+                  display:flex;
+                  align-items:center;
+                  justify-content:center;
+                  text-align:center;
+                "
+                title="Clique para agendar"
+              >
+                +
+              </div>
+            </td>
+          `;
+        }
+
+        const isClosed = String(item.status || "").toLowerCase() === "closed";
+
+        const itemJson = encodeURIComponent(JSON.stringify(item));
+
+        return `
+          <td style="padding:4px; vertical-align:top;">
+            <div
+              data-slot="edit"
+              data-item="${itemJson}"
+              style="
+                background:${isClosed ? "#dfe3e8" : "#eef3f8"};
+                border-left:3px solid ${isClosed ? "#8b949e" : "#6b7280"};
+                border-radius:8px;
+                padding:6px 8px;
+                min-height:56px;
+                box-sizing:border-box;
+                overflow:hidden;
+                cursor:pointer;
+              "
+              title="Clique para editar"
+            >
+              <div style="
+                font-weight:700;
+                font-size:12px;
+                color:#1f2937;
+                white-space:nowrap;
+                overflow:hidden;
+                text-overflow:ellipsis;
+                margin-bottom:2px;
+              ">
+                ${escapeHtml(item.client_name || "-")}
+              </div>
+
+              <div style="
+                font-size:11px;
+                color:#475569;
+                white-space:nowrap;
+                overflow:hidden;
+                text-overflow:ellipsis;
+                margin-bottom:2px;
+              ">
+                ${escapeHtml(item.service_name || "-")}
+              </div>
+
+              <div style="font-size:11px; color:#334155; margin-bottom:2px;">
+                ${money(item.price)}
+              </div>
+
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+  <div style="font-size:10px; color:#64748b;">
+    ${escapeHtml(item.status || "scheduled")}
+  </div>
+
+  ${
+    String(item.status || "").toLowerCase() !== "closed"
+      ? `<button
+          data-close="1"
+          data-id="${item.id}"
+          style="
+            font-size:10px;
+            padding:2px 6px;
+            border:none;
+            border-radius:6px;
+            background:#16a34a;
+            color:#fff;
+            cursor:pointer;
+          "
+        >
+          Fechar
+        </button>`
+      : ""
+  }
+</div>
+            </div>
+          </td>
+        `;
+      }).join("")}
+    </tr>
+  `).join("");
+}
+
+    async function loadAgenda() {
+      const date = dateInput.value || todayISO();
+      statusEl.textContent = `Carregando agenda de ${date}...`;
+      tbody.innerHTML = `<tr><td colspan="6" class="empty">Carregando...</td></tr>`;
+
+      try {
+        const res = await fetch(`${SERVER_BASE}/agenda/appointments?date=${encodeURIComponent(date)}`, {
+          method: "GET"
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const data = await res.json();
+        const list = normalizeList(data);
+
+        renderRows(list);
+        statusEl.textContent = `${list.length} agendamento(s) em ${date}`;
+      } catch (err) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="empty erro">
+Erro ao carregar agenda.
+Detalhe: ${escapeHtml(err?.message || String(err))}
+            </td>
+          </tr>
+        `;
+        statusEl.textContent = "Falha ao carregar agenda";
+      }
+    }
+
+    async function saveAppointment() {
+  formMsg.textContent = "Salvando...";
+
+  const payload = {
+    date: fDate.value || dateInput.value || todayISO(),
+    start: fStart.value || "08:00",
+    client_id: null,
+    client_name: (fClientName.value || "").trim(),
+    service_id: null,
+    service_name: (fServiceName.value || "").trim(),
+    price: Number(fPrice.value || 0),
+    duration_min: Number(fDuration.value || 15),
+    pause_min: Number(fPause.value || 0),
+    notes: (fNotes.value || "").trim(),
+    series_id: null,
+    professional_id: null,
+    professional_name: (fProfessionalName.value || "").trim(),
+    services_json: "[]"
+  };
+
+  if (!payload.client_name) {
+    formMsg.textContent = "Informe o cliente.";
+    return;
+  }
+
+  if (!payload.service_name) {
+    formMsg.textContent = "Informe o serviço.";
+    return;
+  }
+
+  if (!payload.professional_name) {
+    formMsg.textContent = "Informe o profissional.";
+    return;
+  }
+
+  const editId = formCard.dataset.editId || "";
+
+  try {
+    const url = editId
+      ? `${SERVER_BASE}/agenda/appointments/${encodeURIComponent(editId)}`
+      : `${SERVER_BASE}/agenda/appointments`;
+
+    const method = editId ? "PUT" : "POST";
+
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const text = await res.text();
+    let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch {}
+
+    if (!res.ok) {
+      throw new Error(data?.error || data?.message || `HTTP ${res.status}`);
+    }
+
+    formMsg.textContent = editId
+      ? "Agendamento atualizado com sucesso."
+      : "Agendamento salvo com sucesso.";
+
+    dateInput.value = payload.date;
+    toggleForm(false);
+    await loadAgenda();
+  } catch (err) {
+    formMsg.textContent = `Erro ao salvar: ${err?.message || String(err)}`;
+  }
+}
+
+    dateInput.value = todayISO();
+    fDate.value = todayISO();
+
+    btnLoad.addEventListener("click", loadAgenda);
+    btnToggleForm.addEventListener("click", () => toggleForm(formCard.style.display === "none"));
+    btnCancelForm.addEventListener("click", () => toggleForm(false));
+    btnSave.addEventListener("click", saveAppointment);
+
+  tbody.addEventListener("click", (e) => {
+  const btnClose = e.target.closest("[data-close='1']");
+  if (btnClose) {
+    e.stopPropagation();
+
+    const id = btnClose.dataset.id;
+
+    if (!confirm("Fechar este atendimento?")) return;
+
+    fetch(`${SERVER_BASE}/agenda/appointments/${encodeURIComponent(id)}/close`, {
+      method: "POST"
+    })
+      .then(res => res.json())
+      .then(() => loadAgenda())
+      .catch(err => alert("Erro ao fechar: " + err.message));
+
+    return;
+  }
+  const newSlot = e.target.closest("[data-slot='new']");
+  if (newSlot) {
+    openFormForSlot(
+      newSlot.dataset.date,
+      newSlot.dataset.time,
+      newSlot.dataset.professional
+    );
+    return;
+  }
+
+  const editSlot = e.target.closest("[data-slot='edit']");
+  if (editSlot) {
+    try {
+      const item = JSON.parse(decodeURIComponent(editSlot.dataset.item || ""));
+      openFormForEdit(item);
+    } catch (err) {
+      console.error("Erro ao abrir edição:", err);
+    }
+  }
+});
+
+    loadAgenda();
+  </script>
+</body>
+</html>
